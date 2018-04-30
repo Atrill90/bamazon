@@ -14,6 +14,7 @@ var connection = mysql.createConnection({
     database: "bamazonDB"
 });
 
+
 readItems();
 
 
@@ -21,7 +22,7 @@ function start(res) {
     inquirer.prompt([{
             type: "input",
             name: "id",
-            message: "What is the id of the item?",
+            message: "What is the id of the item you'd like to purchase?",
         },
         {
             type: "input",
@@ -33,7 +34,8 @@ function start(res) {
         let quantity = answers.quantity;
         let itemIndex = parseInt(itemID) - 1;
         let correctID = res[itemIndex];
-        let newQuantity = correctID.quantity - quantity;
+        let inStock =correctID.quantity;
+        let newQuantity = inStock - quantity;
         connection.query("UPDATE items SET ? WHERE ?", [{
                     quantity: newQuantity
                 },
@@ -42,9 +44,20 @@ function start(res) {
                 }
             ],
             function (err, res) {
-                if (err) throw err;
-                console.log(`you bought ${quantity} of ${correctID.product} which cost you $${correctID.price * quantity}`);
-                readItems();
+                // if (err) throw err;
+                if (quantity > inStock){
+                    console.log("insufficient items please make another selection");
+                    // start();
+                    connection.end();
+                } else {
+                    console.log(`\n you bought ${quantity} ${correctID.product} which cost you $${correctID.price * quantity}\n`);
+                    connection.query("SELECT * FROM items", function (err, res) {
+                        if (err) throw err;
+                        console.table(res);
+                    });
+                connection.end();
+                }
+
                 // start();
                 // Log all results of the SELECT statement
 
@@ -68,3 +81,4 @@ function readItems() {
         //   connection.end();
     });
 }
+
